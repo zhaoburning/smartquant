@@ -56,15 +56,26 @@
   height: 44px !important;
   line-height: 44px !important;
   transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
 }
 
 .app-menu .ant-menu-item:hover {
-  background: rgba(255,255,255,0.1) !important;
+  background: rgba(255,255,255,0.15) !important;
+  color: #fff !important;
 }
 
 .app-menu .ant-menu-item-selected {
   background: linear-gradient(90deg, #1890ff 0%, #40a9ff 100%) !important;
   box-shadow: 0 4px 12px rgba(24,144,255,0.3);
+  color: #fff !important;
+  font-weight: 600 !important;
+}
+
+.app-menu .ant-menu-item .anticon,
+.app-menu .ant-menu-item .ant-menu-title-content {
+  color: inherit !important;
 }
 
 .sider-footer {
