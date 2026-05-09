@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { Card, Table, Button, Tag, Modal, message, Space, InputNumber } from 'antd'
-import { ReloadOutlined, ShoppingCartOutlined } from '@ant-design/icons'
-import { getRecommendations, generateRecommendations, buyStock } from '../api'
+import { Button, Tag, Modal, message, InputNumber, Space } from 'antd'
+import { ReloadOutlined, ShoppingCartOutlined, ThunderboltOutlined, FireOutlined } from '@ant-design/icons'
+import { getRecommendations, buyStock } from '../api'
 
 function Recommendations() {
   const [loading, setLoading] = useState(false)
@@ -23,21 +23,6 @@ function Recommendations() {
       }
     } catch (error) {
       message.error('获取推荐失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleGenerate = async () => {
-    try {
-      setLoading(true)
-      const res = await generateRecommendations()
-      if (res.data.success) {
-        setRecommendations(res.data.data)
-        message.success('推荐生成成功')
-      }
-    } catch (error) {
-      message.error('生成推荐失败')
     } finally {
       setLoading(false)
     }
@@ -68,117 +53,121 @@ function Recommendations() {
     }
   }
 
-  const columns = [
-    {
-      title: '股票名称',
-      dataIndex: 'stock_name',
-      key: 'stock_name',
-      render: (text, record) => (
-        <div>
-          <div style={{ fontWeight: 600 }}>{text}</div>
-          <div style={{ color: '#999', fontSize: 12 }}>{record.stock_code}</div>
-        </div>
-      )
-    },
-    {
-      title: '当前价格',
-      dataIndex: 'current_price',
-      key: 'current_price',
-      render: (price) => `¥${price?.toFixed(2) || '-'}`,
-    },
-    {
-      title: '目标价格',
-      dataIndex: 'target_price',
-      key: 'target_price',
-      render: (price) => `¥${price?.toFixed(2) || '-'}`,
-    },
-    {
-      title: '止损价格',
-      dataIndex: 'stop_loss',
-      key: 'stop_loss',
-      render: (price) => `¥${price?.toFixed(2) || '-'}`,
-    },
-    {
-      title: '评分',
-      dataIndex: 'score',
-      key: 'score',
-      render: (score) => (
-        <Tag color={score >= 80 ? 'green' : score >= 70 ? 'blue' : 'orange'}>
-          {score}
-        </Tag>
-      ),
-    },
-    {
-      title: '信号',
-      dataIndex: 'signal',
-      key: 'signal',
-      render: (signal) => (
-        <Tag color={signal.includes('强烈') ? 'red' : 'blue'}>
-          {signal}
-        </Tag>
-      ),
-    },
-    {
-      title: '风险等级',
-      dataIndex: 'risk_level',
-      key: 'risk_level',
-      render: (risk) => (
-        <Tag color={risk.includes('低') ? 'green' : 'orange'}>
-          {risk}
-        </Tag>
-      ),
-    },
-    {
-      title: '推荐理由',
-      dataIndex: 'reasons',
-      key: 'reasons',
-      render: (reasons) => (
-        <div style={{ maxWidth: 200, fontSize: 12, color: '#666' }}>
-          {reasons?.join('；') || '-'}
-        </div>
-      ),
-    },
-    {
-      title: '操作',
-      key: 'action',
-      render: (_, record) => (
-        <Button 
-          type="primary" 
-          icon={<ShoppingCartOutlined />}
-          onClick={() => handleBuy(record)}
-        >
-          买入
-        </Button>
-      ),
-    },
-  ]
+  const getRiskColor = (risk) => {
+    if (risk.includes('低')) return 'success'
+    if (risk.includes('高')) return 'error'
+    return 'warning'
+  }
+
+  const getScoreColor = (score) => {
+    if (score >= 85) return '#52c41a'
+    if (score >= 75) return '#1890ff'
+    return '#faad14'
+  }
 
   return (
-    <div>
-      <Card 
-        title="智能推荐股票" 
-        className="stat-card"
-        extra={
-          <Button 
-            type="primary" 
-            icon={<ReloadOutlined />}
-            loading={loading}
-            onClick={handleGenerate}
-          >
-            生成推荐
-          </Button>
-        }
-      >
-        <Table
-          columns={columns}
-          dataSource={recommendations}
-          rowKey="stock_code"
+    <div className="recommendations">
+      <div className="page-header">
+        <div>
+          <h1>智能推荐</h1>
+          <p>基于量化模型精选优质股票</p>
+        </div>
+        <Button 
+          type="primary"
+          icon={<ReloadOutlined />}
           loading={loading}
-        />
-      </Card>
+          onClick={fetchRecommendations}
+          className="refresh-btn"
+        >
+          刷新推荐
+        </Button>
+      </div>
+
+      <div className="stock-grid">
+        {recommendations.map((stock, index) => (
+          <div key={stock.stock_code} className="stock-card">
+            <div className="stock-card-header">
+              <div className="stock-title">
+                <span className="rank-badge">
+                  {index === 0 ? <FireOutlined /> : `#${index + 1}`}
+                </span>
+                <div>
+                  <h4>{stock.stock_name}</h4>
+                  <span className="stock-code">{stock.stock_code}</span>
+                </div>
+              </div>
+              <Tag color={stock.signal.includes('强烈') ? 'red' : 'blue'}>
+                <ThunderboltOutlined /> {stock.signal}
+              </Tag>
+            </div>
+
+            <div className="stock-card-body">
+              <div className="price-row">
+                <span className="label">现价</span>
+                <span className="value price">¥{stock.current_price?.toFixed(2)}</span>
+              </div>
+              
+              <div className="target-row">
+                <div>
+                  <span className="label">目标价</span>
+                  <span className="value target">¥{stock.target_price?.toFixed(2)}</span>
+                </div>
+                <div>
+                  <span className="label">止损价</span>
+                  <span className="value stop-loss">¥{stock.stop_loss?.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="score-section">
+                <span className="label">综合评分</span>
+                <div className="score-display">
+                  <div className="score-bar-bg">
+                    <div 
+                      className="score-bar-fill"
+                      style={{ 
+                        width: `${stock.score}%`,
+                        backgroundColor: getScoreColor(stock.score)
+                      }}
+                    />
+                  </div>
+                  <span className="score-number" style={{ color: getScoreColor(stock.score) }}>
+                    {stock.score}
+                  </span>
+                </div>
+              </div>
+
+              <div className="risk-row">
+                <Tag color={getRiskColor(stock.risk_level)}>
+                  {stock.risk_level}
+                </Tag>
+                <span className="position-ratio">
+                  建议仓位: {(stock.position_ratio * 100).toFixed(0)}%
+                </span>
+              </div>
+
+              <div className="reasons">
+                {stock.reasons?.map((reason, i) => (
+                  <Tag key={i} className="reason-tag">{reason}</Tag>
+                ))}
+              </div>
+            </div>
+
+            <div className="stock-card-footer">
+              <Button 
+                type="primary"
+                icon={<ShoppingCartOutlined />}
+                onClick={() => handleBuy(stock)}
+                block
+              >
+                立即买入
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
 
       <Modal
-        title="买入股票"
+        title="确认买入"
         open={buyModalVisible}
         onOk={confirmBuy}
         onCancel={() => setBuyModalVisible(false)}
@@ -186,24 +175,40 @@ function Recommendations() {
         cancelText="取消"
       >
         {selectedStock && (
-          <div>
-            <p><strong>股票名称：</strong>{selectedStock.stock_name}</p>
-            <p><strong>股票代码：</strong>{selectedStock.stock_code}</p>
-            <p><strong>当前价格：</strong>¥{selectedStock.current_price?.toFixed(2)}</p>
-            <div style={{ marginTop: 16 }}>
+          <div className="buy-modal">
+            <div className="modal-stock-info">
+              <h3>{selectedStock.stock_name}</h3>
+              <p>股票代码: {selectedStock.stock_code}</p>
+            </div>
+            
+            <div className="modal-price">
+              <span>当前价格</span>
+              <strong>¥{selectedStock.current_price?.toFixed(2)}</strong>
+            </div>
+
+            <div className="modal-input">
+              <label>买入数量 (手)</label>
               <Space>
-                <span>买入数量：</span>
                 <InputNumber
-                  min={100}
-                  step={100}
+                  min={1}
+                  max={1000}
                   value={shares}
                   onChange={setShares}
+                  size="large"
                 />
-                <span>股</span>
+                <span>手 (1手=100股)</span>
               </Space>
             </div>
-            <div style={{ marginTop: 16, padding: 12, background: '#f5f5f5', borderRadius: 4 }}>
-              <p><strong>预计金额：</strong>¥{(selectedStock.current_price * shares).toFixed(2)}</p>
+
+            <div className="modal-summary">
+              <div className="summary-row">
+                <span>买入股数</span>
+                <span>{shares * 100} 股</span>
+              </div>
+              <div className="summary-row total">
+                <span>预计金额</span>
+                <strong>¥{(selectedStock.current_price * shares * 100).toFixed(2)}</strong>
+              </div>
             </div>
           </div>
         )}

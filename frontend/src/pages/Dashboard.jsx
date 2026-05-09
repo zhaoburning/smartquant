@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Row, Col, Card, Statistic, Spin, message } from 'antd'
+import { Row, Col, Spin, message } from 'antd'
 import { DollarOutlined, TrophyOutlined, RiseOutlined, FallOutlined } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
 import { getAccount, getRecommendations } from '../api'
@@ -36,25 +36,41 @@ function Dashboard() {
 
   const getPortfolioChartOption = () => {
     return {
-      title: { text: '资产走势', left: 'center' },
-      tooltip: { trigger: 'axis' },
+      backgroundColor: 'transparent',
+      grid: { top: 40, right: 20, bottom: 40, left: 60 },
+      tooltip: { 
+        trigger: 'axis',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderColor: '#e8e8e8',
+        textStyle: { color: '#333' }
+      },
       xAxis: {
         type: 'category',
-        data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+        data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+        axisLine: { lineStyle: { color: '#e8e8e8' } },
+        axisLabel: { color: '#666' }
       },
-      yAxis: { type: 'value' },
+      yAxis: { 
+        type: 'value',
+        axisLine: { show: false },
+        splitLine: { lineStyle: { color: '#f0f0f0' } },
+        axisLabel: { color: '#666', formatter: v => `¥${(v/1000).toFixed(0)}k` }
+      },
       series: [{
-        data: [1000000, 1020000, 1015000, 1040000, 1055000, 1060000, 1080000],
+        data: [100000, 102000, 101500, 104000, 105500, 106000, 108000],
         type: 'line',
-        smooth: true,
-        itemStyle: { color: '#1890ff' },
+        smooth: 0.6,
+        symbol: 'circle',
+        symbolSize: 8,
+        lineStyle: { color: '#1890ff', width: 3 },
+        itemStyle: { color: '#1890ff', borderColor: '#fff', borderWidth: 2 },
         areaStyle: {
           color: {
             type: 'linear',
             x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(24, 144, 255, 0.3)' },
-              { offset: 1, color: 'rgba(24, 144, 255, 0.05)' }
+              { offset: 0, color: 'rgba(24, 144, 255, 0.15)' },
+              { offset: 1, color: 'rgba(24, 144, 255, 0.01)' }
             ]
           }
         }
@@ -64,23 +80,39 @@ function Dashboard() {
 
   const getPieChartOption = () => {
     return {
-      title: { text: '持仓分布', left: 'center' },
-      tooltip: { trigger: 'item' },
+      backgroundColor: 'transparent',
+      tooltip: { 
+        trigger: 'item',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderColor: '#e8e8e8',
+        textStyle: { color: '#333' },
+        formatter: '{b}: ¥{c} ({d}%)'
+      },
+      legend: {
+        orient: 'vertical',
+        right: 20,
+        top: 'center',
+        textStyle: { color: '#666' }
+      },
       series: [{
         type: 'pie',
-        radius: ['40%', '70%'],
+        radius: ['50%', '75%'],
+        center: ['35%', '50%'],
         avoidLabelOverlap: false,
         itemStyle: {
-          borderRadius: 10,
+          borderRadius: 8,
           borderColor: '#fff',
-          borderWidth: 2
+          borderWidth: 3
         },
-        label: { show: true, formatter: '{b}: ¥{c}' },
+        label: { show: false },
+        emphasis: {
+          label: { show: false }
+        },
         data: [
-          { value: 300000, name: '贵州茅台', itemStyle: { color: '#1890ff' } },
-          { value: 200000, name: '五粮液', itemStyle: { color: '#52c41a' } },
-          { value: 150000, name: '招商银行', itemStyle: { color: '#faad14' } },
-          { value: 350000, name: '现金', itemStyle: { color: '#d9d9d9' } }
+          { value: 16850, name: '贵州茅台', itemStyle: { color: '#1890ff' } },
+          { value: 18400, name: '招商银行', itemStyle: { color: '#52c41a' } },
+          { value: 28500, name: '五粮液', itemStyle: { color: '#722ed1' } },
+          { value: 61930.50, name: '现金', itemStyle: { color: '#f0f0f0' } }
         ]
       }]
     }
@@ -88,100 +120,104 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '100px' }}>
+      <div className="loading-container">
         <Spin size="large" />
+        <p>加载市场数据中...</p>
       </div>
     )
   }
 
+  const stats = accountData?.stats || {}
+
   return (
-    <div>
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} md={6}>
-          <Card className="stat-card">
-            <Statistic
-              title="总资产"
-              value={accountData?.total_value || 1000000}
-              precision={2}
-              valueStyle={{ color: '#1890ff' }}
-              prefix={<DollarOutlined />}
-            />
-          </Card>
+    <div className="dashboard">
+      <div className="page-header">
+        <h1>数据看板</h1>
+        <p>实时监控账户表现与市场动态</p>
+      </div>
+
+      <Row gutter={[24, 24]} className="stats-row">
+        <Col xs={24} sm={12} lg={6}>
+          <div className="stat-card primary">
+            <div className="stat-icon"><DollarOutlined /></div>
+            <div className="stat-content">
+              <span className="stat-label">总资产</span>
+              <span className="stat-value">¥{(accountData?.total_value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
         </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card className="stat-card">
-            <Statistic
-              title="总收益"
-              value={accountData?.total_profit || 80000}
-              precision={2}
-              valueStyle={{ color: '#3f8600' }}
-              prefix={<TrophyOutlined />}
-            />
-          </Card>
+        <Col xs={24} sm={12} lg={6}>
+          <div className="stat-card success">
+            <div className="stat-icon"><TrophyOutlined /></div>
+            <div className="stat-content">
+              <span className="stat-label">总收益</span>
+              <span className="stat-value">+¥{stats.total_profit?.toLocaleString('zh-CN', { minimumFractionDigits: 2 }) || '0.00'}</span>
+            </div>
+          </div>
         </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card className="stat-card">
-            <Statistic
-              title="收益率"
-              value={accountData?.profit_rate || 8}
-              precision={2}
-              valueStyle={{ color: '#cf1322' }}
-              prefix={<RiseOutlined />}
-              suffix="%"
-            />
-          </Card>
+        <Col xs={24} sm={12} lg={6}>
+          <div className="stat-card info">
+            <div className="stat-icon"><RiseOutlined /></div>
+            <div className="stat-content">
+              <span className="stat-label">收益率</span>
+              <span className="stat-value">+{stats.total_profit_pct || 0}%</span>
+            </div>
+          </div>
         </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card className="stat-card">
-            <Statistic
-              title="持仓数量"
-              value={accountData?.position_count || 3}
-              valueStyle={{ color: '#faad14' }}
-              prefix={<FallOutlined />}
-            />
-          </Card>
+        <Col xs={24} sm={12} lg={6}>
+          <div className="stat-card warning">
+            <div className="stat-icon"><FallOutlined /></div>
+            <div className="stat-content">
+              <span className="stat-label">胜率</span>
+              <span className="stat-value">{stats.win_rate || 0}%</span>
+            </div>
+          </div>
         </Col>
       </Row>
 
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+      <Row gutter={[24, 24]}>
         <Col xs={24} lg={14}>
-          <Card title="资产走势" className="stat-card">
-            <ReactECharts option={getPortfolioChartOption()} style={{ height: 350 }} />
-          </Card>
+          <div className="chart-card">
+            <h3>资产走势</h3>
+            <ReactECharts option={getPortfolioChartOption()} style={{ height: 320 }} />
+          </div>
         </Col>
         <Col xs={24} lg={10}>
-          <Card title="持仓分布" className="stat-card">
-            <ReactECharts option={getPieChartOption()} style={{ height: 350 }} />
-          </Card>
+          <div className="chart-card">
+            <h3>持仓分布</h3>
+            <ReactECharts option={getPieChartOption()} style={{ height: 320 }} />
+          </div>
         </Col>
       </Row>
 
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+      <Row gutter={[24, 24]}>
         <Col xs={24}>
-          <Card title="今日推荐股票" className="stat-card">
-            {recommendations.slice(0, 3).map((stock, index) => (
-              <div key={stock.stock_code} style={{ 
-                padding: '12px 0', 
-                borderBottom: index < 2 ? '1px solid #f0f0f0' : 'none',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div>
-                  <div style={{ fontWeight: 600 }}>{stock.stock_name}</div>
-                  <div style={{ color: '#999', fontSize: 12 }}>{stock.stock_code}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ color: stock.signal.includes('强烈') ? '#cf1322' : '#faad14', fontWeight: 600 }}>
-                    {stock.signal}
+          <div className="chart-card">
+            <h3>热门推荐</h3>
+            <div className="stock-list">
+              {recommendations.slice(0, 5).map((stock, index) => (
+                <div key={stock.stock_code} className="stock-item">
+                  <div className="stock-rank">{index + 1}</div>
+                  <div className="stock-info">
+                    <span className="stock-name">{stock.stock_name}</span>
+                    <span className="stock-code">{stock.stock_code}</span>
                   </div>
-                  <div style={{ color: '#999', fontSize: 12 }}>
-                    评分: {stock.score}
+                  <div className="stock-price">
+                    <span className="price">¥{stock.current_price?.toFixed(2)}</span>
+                    <span className={`signal ${stock.signal.includes('强烈') ? 'strong' : ''}`}>
+                      {stock.signal}
+                    </span>
+                  </div>
+                  <div className="stock-score">
+                    <div className="score-bar">
+                      <div className="score-fill" style={{ width: `${stock.score}%` }} />
+                    </div>
+                    <span className="score-value">{stock.score}</span>
                   </div>
                 </div>
-              </div>
-            ))}
-          </Card>
+              ))}
+            </div>
+          </div>
         </Col>
       </Row>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { Card, Table, Button, Tag, Modal, message, Space, InputNumber, Statistic } from 'antd'
+import { Row, Col, Button, Tag, Modal, message, InputNumber } from 'antd'
 import { ReloadOutlined, DollarOutlined, ArrowUpOutlined } from '@ant-design/icons'
+import ReactECharts from 'echarts-for-react'
 import { getAccount, getTradeHistory, sellStock } from '../api'
 
 function Portfolio() {
@@ -61,203 +62,155 @@ function Portfolio() {
     }
   }
 
-  const mockPositions = [
-    {
-      stock_code: '600519',
-      stock_name: '贵州茅台',
-      shares: 100,
-      cost_price: 1700,
-      current_price: 1850,
-      profit: 15000,
-      profit_rate: 8.82
-    },
-    {
-      stock_code: '000858',
-      stock_name: '五粮液',
-      shares: 500,
-      cost_price: 140,
-      current_price: 145,
-      profit: 2500,
-      profit_rate: 3.57
-    },
-    {
-      stock_code: '600036',
-      stock_name: '招商银行',
-      shares: 1000,
-      cost_price: 36,
-      current_price: 38,
-      profit: 2000,
-      profit_rate: 5.56
+  const mockPositions = accountData?.positions || [
+    { stock_code: '600519', stock_name: '贵州茅台', shares: 10, avg_price: 1650, current_price: 1685, profit: 350, profit_pct: 2.12 },
+    { stock_code: '600036', stock_name: '招商银行', shares: 500, avg_price: 35.2, current_price: 36.8, profit: 800, profit_pct: 4.55 },
+    { stock_code: '000858', stock_name: '五粮液', shares: 200, avg_price: 138, current_price: 142.5, profit: 900, profit_pct: 3.26 }
+  ]
+
+  const getPositionChartOption = () => {
+    const validPositions = mockPositions.filter(p => p.current_price && p.shares)
+    return {
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'item' },
+      series: [{
+        type: 'pie',
+        radius: ['45%', '70%'],
+        center: ['50%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 6,
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        label: { show: false },
+        emphasis: { label: { show: false } },
+        data: validPositions.map((p, i) => ({
+          value: (p.current_price * p.shares).toFixed(2),
+          name: p.stock_name,
+          itemStyle: { color: ['#1890ff', '#52c41a', '#722ed1', '#faad14'][i % 4] }
+        }))
+      }]
     }
-  ]
-
-  const positionColumns = [
-    {
-      title: '股票名称',
-      dataIndex: 'stock_name',
-      key: 'stock_name',
-      render: (text, record) => (
-        <div>
-          <div style={{ fontWeight: 600 }}>{text}</div>
-          <div style={{ color: '#999', fontSize: 12 }}>{record.stock_code}</div>
-        </div>
-      )
-    },
-    {
-      title: '持仓数量',
-      dataIndex: 'shares',
-      key: 'shares',
-      render: (shares) => `${shares} 股`,
-    },
-    {
-      title: '成本价',
-      dataIndex: 'cost_price',
-      key: 'cost_price',
-      render: (price) => `¥${price?.toFixed(2)}`,
-    },
-    {
-      title: '现价',
-      dataIndex: 'current_price',
-      key: 'current_price',
-      render: (price) => `¥${price?.toFixed(2)}`,
-    },
-    {
-      title: '持仓市值',
-      key: 'market_value',
-      render: (_, record) => `¥${(record.current_price * record.shares).toFixed(2)}`,
-    },
-    {
-      title: '盈亏',
-      dataIndex: 'profit',
-      key: 'profit',
-      render: (profit, record) => (
-        <span style={{ color: profit >= 0 ? '#cf1322' : '#3f8600', fontWeight: 600 }}>
-          {profit >= 0 ? '+' : ''}¥{profit?.toFixed(2)}
-        </span>
-      ),
-    },
-    {
-      title: '收益率',
-      dataIndex: 'profit_rate',
-      key: 'profit_rate',
-      render: (rate) => (
-        <Tag color={rate >= 0 ? 'red' : 'green'}>
-          {rate >= 0 ? '+' : ''}{rate?.toFixed(2)}%
-        </Tag>
-      ),
-    },
-    {
-      title: '操作',
-      key: 'action',
-      render: (_, record) => (
-        <Button 
-          type="primary" 
-          danger
-          onClick={() => handleSell(record)}
-        >
-          卖出
-        </Button>
-      ),
-    },
-  ]
-
-  const historyColumns = [
-    {
-      title: '日期',
-      dataIndex: 'date',
-      key: 'date',
-    },
-    {
-      title: '股票名称',
-      dataIndex: 'stock_name',
-      key: 'stock_name',
-    },
-    {
-      title: '操作',
-      dataIndex: 'action',
-      key: 'action',
-      render: (action) => (
-        <Tag color={action === '买入' ? 'blue' : 'red'}>{action}</Tag>
-      ),
-    },
-    {
-      title: '数量',
-      dataIndex: 'shares',
-      key: 'shares',
-    },
-    {
-      title: '价格',
-      dataIndex: 'price',
-      key: 'price',
-    },
-  ]
+  }
 
   return (
-    <div>
-      <div style={{ marginBottom: 16 }}>
-        <Card className="stat-card">
-          <Space size={48}>
-            <Statistic
-              title="总资产"
-              value={accountData?.total_value || 1080000}
-              precision={2}
-              valueStyle={{ color: '#1890ff' }}
-              prefix={<DollarOutlined />}
-            />
-            <Statistic
-              title="持仓市值"
-              value={accountData?.position_value || 730000}
-              precision={2}
-              valueStyle={{ color: '#faad14' }}
-            />
-            <Statistic
-              title="可用资金"
-              value={accountData?.cash || 350000}
-              precision={2}
-              valueStyle={{ color: '#52c41a' }}
-            />
-            <Statistic
-              title="总盈亏"
-              value={accountData?.total_profit || 80000}
-              precision={2}
-              valueStyle={{ color: '#cf1322' }}
-              prefix={<ArrowUpOutlined />}
-            />
-          </Space>
-        </Card>
+    <div className="portfolio">
+      <div className="page-header">
+        <div>
+          <h1>持仓管理</h1>
+          <p>查看持仓明细与交易记录</p>
+        </div>
+        <Button icon={<ReloadOutlined />} loading={loading} onClick={fetchData}>
+          刷新
+        </Button>
       </div>
 
-      <Card 
-        title="当前持仓" 
-        className="stat-card"
-        style={{ marginBottom: 16 }}
-        extra={
-          <Button 
-            icon={<ReloadOutlined />}
-            loading={loading}
-            onClick={fetchData}
-          >
-            刷新
-          </Button>
-        }
-      >
-        <Table
-          columns={positionColumns}
-          dataSource={mockPositions}
-          rowKey="stock_code"
-          loading={loading}
-          pagination={false}
-        />
-      </Card>
+      <Row gutter={[24, 24]}>
+        <Col xs={24} sm={12} lg={6}>
+          <div className="stat-card primary">
+            <div className="stat-icon"><DollarOutlined /></div>
+            <div className="stat-content">
+              <span className="stat-label">总资产</span>
+              <span className="stat-value">¥{(accountData?.total_value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <div className="stat-card success">
+            <div className="stat-icon"><DollarOutlined /></div>
+            <div className="stat-content">
+              <span className="stat-label">持仓市值</span>
+              <span className="stat-value">¥{mockPositions.reduce((sum, p) => sum + (p.current_price * p.shares || 0), 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <div className="stat-card warning">
+            <div className="stat-icon"><DollarOutlined /></div>
+            <div className="stat-content">
+              <span className="stat-label">可用资金</span>
+              <span className="stat-value">¥{(accountData?.cash || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <div className="stat-card info">
+            <div className="stat-icon"><ArrowUpOutlined /></div>
+            <div className="stat-content">
+              <span className="stat-label">总盈亏</span>
+              <span className="stat-value" style={{ color: '#52c41a' }}>+¥{mockPositions.reduce((sum, p) => sum + (p.profit || 0), 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+        </Col>
+      </Row>
 
-      <Card title="交易历史" className="stat-card">
-        <Table
-          columns={historyColumns}
-          dataSource={tradeHistory}
-          rowKey={(record, index) => index}
-          loading={loading}
-        />
-      </Card>
+      <Row gutter={[24, 24]}>
+        <Col xs={24} lg={8}>
+          <div className="chart-card">
+            <h3>持仓分布</h3>
+            <ReactECharts option={getPositionChartOption()} style={{ height: 280 }} />
+          </div>
+        </Col>
+        <Col xs={24} lg={16}>
+          <div className="chart-card">
+            <h3>当前持仓</h3>
+            <div className="position-table">
+              {mockPositions.map((position) => (
+                <div key={position.stock_code} className="position-item">
+                  <div className="position-info">
+                    <span className="stock-name">{position.stock_name}</span>
+                    <span className="stock-code">{position.stock_code}</span>
+                  </div>
+                  <div className="position-detail">
+                    <div className="detail-item">
+                      <span className="label">持仓</span>
+                      <span className="value">{position.shares} 股</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">成本</span>
+                      <span className="value">¥{position.avg_price?.toFixed(2)}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">现价</span>
+                      <span className="value">¥{position.current_price?.toFixed(2)}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">盈亏</span>
+                      <span className="value profit">+¥{position.profit?.toFixed(2)} ({position.profit_pct?.toFixed(2)}%)</span>
+                    </div>
+                  </div>
+                  <Button type="primary" danger onClick={() => handleSell(position)}>卖出</Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Col>
+      </Row>
+
+      <Row gutter={[24, 24]}>
+        <Col xs={24}>
+          <div className="chart-card">
+            <h3>交易历史</h3>
+            <div className="trade-history">
+              {tradeHistory.length > 0 ? tradeHistory.map((trade, index) => (
+                <div key={index} className="trade-item">
+                  <div className="trade-date">{trade.date}</div>
+                  <Tag color={trade.action === '买入' ? 'blue' : 'red'}>{trade.action}</Tag>
+                  <div className="trade-info">
+                    <span className="stock-name">{trade.stock_name}</span>
+                    <span className="stock-detail">{trade.shares} 股 @ ¥{trade.price}</span>
+                  </div>
+                  <div className="trade-amount">¥{trade.amount?.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</div>
+                  {trade.profit && <Tag color="green">+¥{trade.profit}</Tag>}
+                </div>
+              )) : (
+                <div className="empty-state">暂无交易记录</div>
+              )}
+            </div>
+          </div>
+        </Col>
+      </Row>
 
       <Modal
         title="卖出股票"
@@ -268,26 +221,30 @@ function Portfolio() {
         cancelText="取消"
       >
         {selectedPosition && (
-          <div>
-            <p><strong>股票名称：</strong>{selectedPosition.stock_name}</p>
-            <p><strong>股票代码：</strong>{selectedPosition.stock_code}</p>
-            <p><strong>当前价格：</strong>¥{selectedPosition.current_price?.toFixed(2)}</p>
-            <p><strong>可卖数量：</strong>{selectedPosition.shares} 股</p>
-            <div style={{ marginTop: 16 }}>
-              <Space>
-                <span>卖出数量：</span>
-                <InputNumber
-                  min={100}
-                  max={selectedPosition.shares}
-                  step={100}
-                  value={shares}
-                  onChange={setShares}
-                />
-                <span>股</span>
-              </Space>
+          <div className="buy-modal">
+            <div className="modal-stock-info">
+              <h3>{selectedPosition.stock_name}</h3>
+              <p>{selectedPosition.stock_code}</p>
             </div>
-            <div style={{ marginTop: 16, padding: 12, background: '#f5f5f5', borderRadius: 4 }}>
-              <p><strong>预计金额：</strong>¥{(selectedPosition.current_price * shares).toFixed(2)}</p>
+            <div className="modal-price">
+              <span>当前价格</span>
+              <strong>¥{selectedPosition.current_price?.toFixed(2)}</strong>
+            </div>
+            <div className="modal-input">
+              <label>卖出数量 (股)</label>
+              <InputNumber
+                min={100}
+                max={selectedPosition.shares}
+                value={shares}
+                onChange={setShares}
+                style={{ width: '100%' }}
+              />
+            </div>
+            <div className="modal-summary">
+              <div className="summary-row total">
+                <span>预计金额</span>
+                <strong>¥{(selectedPosition.current_price * shares).toFixed(2)}</strong>
+              </div>
             </div>
           </div>
         )}

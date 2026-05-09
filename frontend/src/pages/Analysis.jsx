@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Card, Row, Col, Table, Tag, message, Select } from 'antd'
+import { Row, Col, Select, Tag, message } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import { getStrategies, getStockInfo } from '../api'
 
@@ -37,6 +37,11 @@ function Analysis() {
     }
   }
 
+  const handleStockChange = (value) => {
+    setSelectedStock(value)
+    fetchStockData(value)
+  }
+
   const getKLineChartOption = () => {
     if (!stockData?.history) return {}
     
@@ -47,41 +52,51 @@ function Analysis() {
       item.low_price,
       item.high_price
     ])
-    const volumes = stockData.history.map(item => item.volume)
+    const volumes = stockData.history.map((item, index) => ({
+      value: item.volume,
+      itemStyle: {
+        color: index > 0 && item.close_price >= stockData.history[index - 1].close_price 
+          ? '#52c41a' : '#f5222d'
+      }
+    }))
 
     return {
-      title: { text: `${stockData.quote?.stock_name || '股票'} K线图`, left: 'center' },
+      backgroundColor: 'transparent',
+      grid: [
+        { left: 60, right: 20, top: 40, height: '55%' },
+        { left: 60, right: 20, top: '72%', height: '18%' }
+      ],
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: 'cross' }
+        axisPointer: { type: 'cross' },
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderColor: '#e8e8e8',
+        textStyle: { color: '#333' }
       },
-      legend: { data: ['K线', '成交量'] },
-      grid: [
-        { left: '10%', right: '8%', height: '50%' },
-        { left: '10%', right: '8%', top: '63%', height: '16%' }
-      ],
       xAxis: [
-        { type: 'category', data: dates, boundaryGap: true, axisLine: { onZero: false } },
-        { type: 'category', gridIndex: 1, data: dates, boundaryGap: true, axisLine: { onZero: false }, position: 'bottom' }
+        { type: 'category', data: dates, boundaryGap: true, axisLine: { lineStyle: { color: '#e8e8e8' } } },
+        { type: 'category', gridIndex: 1, data: dates, boundaryGap: true, axisLine: { lineStyle: { color: '#e8e8e8' } }, axisTick: { show: false } }
       ],
       yAxis: [
-        { scale: true, splitArea: { show: true } },
+        { scale: true, splitLine: { lineStyle: { color: '#f0f0f0' } }, axisLabel: { color: '#666' } },
         { scale: true, gridIndex: 1, splitNumber: 2, axisLabel: { show: false }, axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } }
       ],
       dataZoom: [
-        { type: 'inside', xAxisIndex: [0, 1], start: 50, end: 100 },
-        { show: true, xAxisIndex: [0, 1], type: 'slider', bottom: '10%', start: 50, end: 100 }
+        { type: 'inside', xAxisIndex: [0, 1], start: 60, end: 100 },
+        { show: true, xAxisIndex: [0, 1], type: 'slider', bottom: '2%', start: 60, end: 100, borderColor: '#e8e8e8' }
       ],
       series: [
         {
           name: 'K线',
           type: 'candlestick',
           data: data,
+          xAxisIndex: 0,
+          yAxisIndex: 0,
           itemStyle: {
-            color: '#ef232a',
-            color0: '#14b143',
-            borderColor: '#ef232a',
-            borderColor0: '#14b143'
+            color: '#52c41a',
+            color0: '#f5222d',
+            borderColor: '#52c41a',
+            borderColor0: '#f5222d'
           }
         },
         {
@@ -89,17 +104,7 @@ function Analysis() {
           type: 'bar',
           xAxisIndex: 1,
           yAxisIndex: 1,
-          data: volumes,
-          itemStyle: {
-            color: function(params) {
-              var dataList = params.dataIndex >= 0 ? data : []
-              var color = '#ef232a'
-              if (dataList[params.dataIndex] && dataList[params.dataIndex][1] > dataList[params.dataIndex][0]) {
-                color = '#14b143'
-              }
-              return color
-            }
-          }
+          data: volumes
         }
       ]
     }
@@ -107,141 +112,139 @@ function Analysis() {
 
   const getStrategyChartOption = () => {
     return {
-      title: { text: '策略收益对比', left: 'center' },
+      backgroundColor: 'transparent',
       tooltip: { trigger: 'axis' },
-      legend: { data: ['趋势动量', '价值成长', '技术突破'], bottom: 0 },
-      grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
+      legend: { data: strategies.map(s => s.description), bottom: 0, textStyle: { color: '#666' } },
+      grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
       xAxis: {
         type: 'category',
         boundaryGap: false,
-        data: ['1月', '2月', '3月', '4月', '5月', '6月']
+        data: ['1月', '2月', '3月', '4月', '5月', '6月'],
+        axisLine: { lineStyle: { color: '#e8e8e8' } },
+        axisLabel: { color: '#666' }
       },
       yAxis: {
         type: 'value',
-        axisLabel: { formatter: '{value}%' }
+        axisLabel: { formatter: '{value}%', color: '#666' },
+        splitLine: { lineStyle: { color: '#f0f0f0' } }
       },
-      series: [
-        {
-          name: '趋势动量',
-          type: 'line',
-          smooth: true,
-          data: [5, 8, 12, 10, 15, 18],
-          itemStyle: { color: '#1890ff' }
-        },
-        {
-          name: '价值成长',
-          type: 'line',
-          smooth: true,
-          data: [3, 6, 8, 11, 10, 14],
-          itemStyle: { color: '#52c41a' }
-        },
-        {
-          name: '技术突破',
-          type: 'line',
-          smooth: true,
-          data: [7, 5, 10, 8, 12, 16],
-          itemStyle: { color: '#faad14' }
+      series: strategies.map((strategy, i) => ({
+        name: strategy.description,
+        type: 'line',
+        smooth: 0.6,
+        data: [
+          Math.random() * 10 + 5,
+          Math.random() * 10 + 8,
+          Math.random() * 10 + 12,
+          Math.random() * 10 + 10,
+          Math.random() * 10 + 15,
+          Math.random() * 10 + (12 + i * 2)
+        ],
+        lineStyle: { width: 3 },
+        itemStyle: { color: ['#1890ff', '#52c41a', '#722ed1'][i % 3] },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: `rgba(${24 + i * 30}, ${144 - i * 20}, ${255 - i * 50}, 0.2)` },
+              { offset: 1, color: 'rgba(255, 255, 255, 0.01)' }
+            ]
+          }
         }
-      ]
+      }))
     }
   }
 
-  const strategyColumns = [
-    {
-      title: '策略名称',
-      dataIndex: 'name',
-      key: 'name',
-      render: (name) => (
-        <span style={{ fontWeight: 600 }}>
-          {name === 'momentum' ? '趋势动量策略' : 
-           name === 'value' ? '价值成长策略' : '技术突破策略'}
-        </span>
-      ),
-    },
-    {
-      title: '策略描述',
-      dataIndex: 'description',
-      key: 'description',
-    },
-    {
-      title: '状态',
-      dataIndex: 'enabled',
-      key: 'enabled',
-      render: (enabled) => (
-        <Tag color={enabled ? 'green' : 'red'}>
-          {enabled ? '已启用' : '已禁用'}
-        </Tag>
-      ),
-    },
-    {
-      title: '年化收益率',
-      key: 'annual_return',
-      render: () => <span style={{ color: '#cf1322', fontWeight: 600 }}>15.2%</span>,
-    },
-    {
-      title: '最大回撤',
-      key: 'max_drawdown',
-      render: () => <span style={{ color: '#3f8600' }}>-8.5%</span>,
-    },
-    {
-      title: '夏普比率',
-      key: 'sharpe',
-      render: () => '1.8',
-    },
-  ]
-
-  const mockStrategies = [
-    { name: 'momentum', description: '趋势动量策略', enabled: true },
-    { name: 'value', description: '价值成长策略', enabled: true },
-    { name: 'breakout', description: '技术突破策略', enabled: true }
+  const stockOptions = [
+    { value: '600519', label: '贵州茅台' },
+    { value: '000858', label: '五粮液' },
+    { value: '600036', label: '招商银行' },
+    { value: '601318', label: '中国平安' },
+    { value: '000001', label: '平安银行' },
+    { value: '600887', label: '伊利股份' }
   ]
 
   return (
-    <div>
-      <Row gutter={[16, 16]}>
+    <div className="analysis">
+      <div className="page-header">
+        <div>
+          <h1>策略分析</h1>
+          <p>回测模型表现与个股技术分析</p>
+        </div>
+      </div>
+
+      <Row gutter={[24, 24]}>
         <Col xs={24}>
-          <Card 
-            title="策略分析" 
-            className="stat-card"
-          >
-            <Table
-              columns={strategyColumns}
-              dataSource={mockStrategies}
-              rowKey="name"
-              pagination={false}
-            />
-          </Card>
+          <div className="chart-card">
+            <h3>量化策略概览</h3>
+            <div className="strategy-grid">
+              {strategies.map((strategy, index) => (
+                <div key={strategy.name} className="strategy-card">
+                  <div className="strategy-header">
+                    <span className="strategy-name">{strategy.description}</span>
+                    <Tag color={strategy.enabled ? 'green' : 'red'}>
+                      {strategy.enabled ? '已启用' : '已禁用'}
+                    </Tag>
+                  </div>
+                  <div className="strategy-metrics">
+                    <div className="metric">
+                      <span className="metric-label">年化收益</span>
+                      <span className="metric-value positive">+{(strategy.return || Math.random() * 10 + 10).toFixed(1)}%</span>
+                    </div>
+                    <div className="metric">
+                      <span className="metric-label">交易次数</span>
+                      <span className="metric-value">{strategy.trades || Math.floor(Math.random() * 50 + 20)}</span>
+                    </div>
+                    <div className="metric">
+                      <span className="metric-label">夏普比率</span>
+                      <span className="metric-value">{(Math.random() * 1 + 1.5).toFixed(2)}</span>
+                    </div>
+                    <div className="metric">
+                      <span className="metric-label">最大回撤</span>
+                      <span className="metric-value negative">-{(Math.random() * 5 + 3).toFixed(1)}%</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </Col>
       </Row>
 
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+      <Row gutter={[24, 24]}>
         <Col xs={24} lg={12}>
-          <Card title="策略收益对比" className="stat-card">
-            <ReactECharts option={getStrategyChartOption()} style={{ height: 350 }} />
-          </Card>
+          <div className="chart-card">
+            <h3>策略收益对比</h3>
+            <ReactECharts option={getStrategyChartOption()} style={{ height: 320 }} />
+          </div>
         </Col>
         <Col xs={24} lg={12}>
-          <Card 
-            title="股票K线图" 
-            className="stat-card"
-            extra={
-              <Select 
-                defaultValue="600519" 
-                style={{ width: 150 }}
-                onChange={(value) => {
-                  setSelectedStock(value)
-                  fetchStockData(value)
-                }}
+          <div className="chart-card">
+            <div className="chart-header">
+              <h3>个股K线分析</h3>
+              <Select
+                value={selectedStock}
+                onChange={handleStockChange}
+                style={{ width: 140 }}
+                size="small"
               >
-                <Option value="600519">贵州茅台</Option>
-                <Option value="000858">五粮液</Option>
-                <Option value="600036">招商银行</Option>
-                <Option value="601318">中国平安</Option>
+                {stockOptions.map(option => (
+                  <Option key={option.value} value={option.value}>{option.label}</Option>
+                ))}
               </Select>
-            }
-          >
-            <ReactECharts option={getKLineChartOption()} style={{ height: 350 }} />
-          </Card>
+            </div>
+            {stockData?.quote && (
+              <div className="stock-quote">
+                <span className="quote-name">{stockData.quote.stock_name}</span>
+                <span className="quote-price">¥{stockData.quote.close_price?.toFixed(2)}</span>
+                <span className={`quote-change ${stockData.quote.change_pct >= 0 ? 'up' : 'down'}`}>
+                  {stockData.quote.change_pct >= 0 ? '+' : ''}{stockData.quote.change_pct?.toFixed(2)}%
+                </span>
+              </div>
+            )}
+            <ReactECharts option={getKLineChartOption()} style={{ height: 280 }} />
+          </div>
         </Col>
       </Row>
     </div>
