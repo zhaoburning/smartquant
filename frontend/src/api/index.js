@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 const USE_MOCK = true
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 const mockApi = {
   health: () => Promise.resolve({ data: { status: 'ok', message: 'Mock API' } }),
@@ -74,7 +75,7 @@ const mockApi = {
 }
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   timeout: 30000
 })
 
