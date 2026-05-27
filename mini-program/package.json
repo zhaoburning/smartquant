@@ -1,0 +1,44 @@
+{
+  "name": "smartquant-mini-program",
+  "version": "1.0.0",
+  "private": true,
+  "description": "智能量化交易小程序",
+  "template": "react",
+  "scripts": {
+    "build:weapp": "taro build --type weapp",
+    "build:swan": "taro build --type swan",
+    "build:alipay": "taro build --type alipay",
+    "build:tt": "taro build --type tt",
+    "build:h5": "taro build --type h5",
+    "dev:weapp": "taro build --type weapp --watch",
+    "dev:swan": "taro build --type swan --watch",
+    "dev:alipay": "taro build --type alipay --watch",
+    "dev:tt": "taro build --type tt --watch",
+    "dev:h5": "taro build --type h5 --watch"
+  },
+  "dependencies": {
+    "@tarojs/components": "^3.6.22",
+    "@tarojs/plugin-framework-react": "^3.6.22",
+    "@tarojs/plugin-platform-weapp": "^3.6.22",
+    "@tarojs/react": "^3.6.22",
+    "@tarojs/runtime": "^3.6.22",
+    "@tarojs/taro": "^3.6.22",
+    "@tarojs/webpack5-runner": "^3.6.22",
+    "nutui-react-taro": "^1.6.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.0",
+    "@typescript-eslint/parser": "^6.7.0",
+    "babel-preset-taro": "^3.6.22",
+    "eslint": "^8.50.0",
+    "eslint-config-taro": "^3.6.22",
+    "eslint-plugin-react": "^7.33.0",
+    "stylelint": "^14.4.0",
+    "typescript": "^5.2.0",
+    "webpack": "^5.89.0"
+  }
+}
