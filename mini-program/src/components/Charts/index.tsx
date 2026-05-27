@@ -10,7 +10,7 @@ export function LineChart({ option, style }: ChartProps) {
   const canvasRef = useRef<any>(null)
 
   useEffect(() => {
-    if (canvasRef.current && option) {
+    if (typeof window !== 'undefined' && canvasRef.current && option) {
       drawLineChart(option)
     }
   }, [option])
@@ -40,7 +40,7 @@ export function PieChart({ option, style }: ChartProps) {
   const canvasRef = useRef<any>(null)
 
   useEffect(() => {
-    if (canvasRef.current && option) {
+    if (typeof window !== 'undefined' && canvasRef.current && option) {
       drawPieChart(option)
     }
   }, [option])

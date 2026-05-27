@@ -24,12 +24,12 @@
     "@tarojs/runtime": "^3.6.22",
     "@tarojs/taro": "^3.6.22",
     "@tarojs/webpack5-runner": "^3.6.22",
-    "nutui-react-taro": "^1.6.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "zustand": "^4.4.7"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@tarojs/cli": "^4.2.0",
+    "@tarojs/plugin-platform-h5": "^4.2.0",
     "@types/react": "^18.2.0",
     "@typescript-eslint/eslint-plugin": "^6.7.0",
     "@typescript-eslint/parser": "^6.7.0",
@@ -39,6 +39,6 @@
     "eslint-plugin-react": "^7.33.0",
     "stylelint": "^14.4.0",
     "typescript": "^5.2.0",
-    "webpack": "^5.89.0"
+    "webpack": "^5.88.0"
   }
 }

@@ -1,3 +1,5 @@
+import { defineComponentApp } from '@tarojs/taro'
+
 export default defineComponentApp({
   pages: [
     'pages/dashboard/index',
